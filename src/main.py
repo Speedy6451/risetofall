@@ -1,24 +1,58 @@
+__docformat__ = "reStructuredText"
+
 import pymunk, pymunk.pygame_util, pygame
 
-space = pymunk.Space()
-space.gravity = 0,-1000
+class riseToFall(object):
+    """
+    riseToFall game class
+    """
 
-body = pymunk.Body(1,1666)
-body.position = 50,100
+    def __init__(self) -> None:
+        # create space
+        self._space = pymunk.Space()
+        self._space.gravity = 0,10
 
-poly = pymunk.Poly.create_box(body)
+        # initialize pygame
+        pygame.init()
+        self._screen = pygame.display.set_mode((400,600))
+        self._clock = pygame.time.Clock()
 
-space.add(body, poly)
+        # set caption
+        pygame.display.set_caption("rise to fall")
 
-pygame.init()
-screen = pygame.display.set_mode([400,600])
-clock = pygame.time.Clock()
-running = True
-# font = pygame.font.SysFont("Arial",16)
+        self._running = True
+        # font = pygame.font.SysFont("Arial",16)
 
+        # set draw options
+        self._print_options = pymunk.pygame_util.DrawOptions(self._screen)
 
-print_options = pymunk.pygame_util.DrawOptions(screen)
+    def _createBox(self):
+        body = pymunk.Body(1,1666)
+        body.position = 50,100
 
-while True:
-    space.step(0.02)
-    space.debug_draw(print_options)
+        poly = pymunk.Poly.create_box(body)
+
+        self._space.add(body, poly)
+
+    def _processEvents(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self._running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self._running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                self._createBox()
+
+    def run(self):
+        while self._running:
+            self._processEvents();
+            self._space.step(0.02)
+            self._screen.fill(pygame.Color("white"))
+            self._space.debug_draw(self._print_options)
+            pygame.display.flip()
+        
+
+if __name__ == "__main__":
+    game = riseToFall()
+    game._createBox()
+    game.run()
