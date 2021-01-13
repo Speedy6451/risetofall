@@ -11,6 +11,7 @@ class Camera(object):
         self.y = y
         self.w = w
         self.h = h
+        self.tracking = None
 
     def translate(self, pos):
         return (pos[0]-self.x,pos[1]-self.y)
@@ -21,6 +22,16 @@ class Camera(object):
             return True
         else:
             return False
+
+    def track(self, thing):
+        self.tracking = thing
+
+    def update(self):
+        if self.tracking:
+            target = self.tracking.getPos()
+
+            self.x += (target[0]-self.x)/2
+            self.y += (target[1]-self.y)/2
 
 class Thing(object):
     """
@@ -92,6 +103,7 @@ class RainDrop(Thing):
         self._game._space.add(self._body,self._poly)
         self.setPos(random.randint(0,400),0)
         self._body.apply_force_at_local_point((0,self._game._space.gravity[1]*1))
+        self._poly.collision_type = 4
     def update(self):
         t = pygame.time.get_ticks()
         dt= t - self._startTime
@@ -109,6 +121,10 @@ class RainDrop(Thing):
         self._game._space.remove(self._body,self._poly)
 
 class Rain(object):
+    def rainCollisionHandler(self, arbiter, space, data):
+        print('thing')
+        return False
+
     def __init__(self,game,maxDrops = 10,maxTime = 15000, dropRate=400):
         self.dropList = [RainDrop(game, maxTime)]
         self.lastSpawn = pygame.time.get_ticks()
@@ -118,10 +134,12 @@ class Rain(object):
         self.game = game
         self.raining = True
 
+        self.collisionHandler = game._space.add_collision_handler(3,4)
+        self.collisionHandler.begin = self.rainCollisionHandler
+
     def update(self):
         t = pygame.time.get_ticks()
         dt= t - self.lastSpawn
-        print(len(self.dropList))
 
         if self.raining:
             if (len(self.dropList) < self.maxDrops and dt > self.dropRate):
@@ -154,6 +172,32 @@ class Level(object):
         for platform in self.level['platforms']:
             self._game._shapes.append(Platform(self._game,platform['pos1'],platform['pos2'],platform['width'] or 4,platform['color'] or (0,0,0,1)))
 
+class Player(Circle):
+    """
+    Player class
+    implements the player that can move and jump
+    """
+    def __init__(self, game):
+        super().__init__(game, 20, (255,0,0,1))
+        self.setPos(random.randint(0,400),0)
+        self._poly.collision_type = 3
+
+class Mouse(Thing):
+    """
+    Mouse class
+    allows the player to interact with the rain
+    """
+    def __init__(self,game):
+        super().__init__(game)
+        self._body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        self._poly = pymunk.Circle(self._body,60)
+        self._game._space.add(self._body,self._poly)
+
+    def draw(self):
+        mouse = pygame.mouse.get_pos()
+        print(mouse)
+        self.setPos(mouse[0],mouse[1])
+        pygame.draw.circle(self._game._screen,(0,0,0,1),self._body.position,60)
 
 class RiseToFall(object):
     """
@@ -185,6 +229,8 @@ class RiseToFall(object):
 
         self.camera = Camera()
 
+        self._shapes.append(Mouse(self))
+
         self.level = Level('testlevel.json',self)
         self.level.start()
 
@@ -213,6 +259,10 @@ class RiseToFall(object):
                 self._shapes.append(shape)
                 self._space.gravity = (self._space.gravity[0]*-1,self._space.gravity[1]*-1)
                 self.rain.raining = not self.rain.raining
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
+                player = Player(self)
+                self._shapes.append(player)
+                self.camera.track(player)
 
     def _drawEntities(self):
         for shape in self._shapes:
@@ -221,11 +271,12 @@ class RiseToFall(object):
     def run(self):
         while self._running:
             self._processEvents();
+            self.camera.update()
             self._space.step(0.02)
             self._screen.fill(pygame.Color("white"))
             # self._space.debug_draw(self._print_options)
-            self._drawEntities()
             self.rain.update()
+            self._drawEntities()
             pygame.display.flip()
         
 
