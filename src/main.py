@@ -29,6 +29,7 @@ class Camera(object):
     def update(self):
         if self.tracking:
             target = self.tracking.getPos()
+            target = (target[0]-(self.w/2),target[1]-(self.h/2))
 
             self.x += (target[0]-self.x)/2
             self.y += (target[1]-self.y)/2
@@ -68,7 +69,7 @@ class Circle(Thing):
 
     def draw(self):
         if self.visible:
-            pygame.draw.circle(self._game._screen,self.color,self._body.position,self.radius)
+            pygame.draw.circle(self._game._screen,self.color,self._game.camera.translate(self._body.position),self.radius)
 
 class Platform(Thing):
     """
@@ -86,7 +87,7 @@ class Platform(Thing):
 
     def draw(self):
         if self.visible:
-            pygame.draw.line(self._game._screen, self.color, self._pos1, self._pos2, self._width)
+            pygame.draw.line(self._game._screen, self.color, self._game.camera.translate(self._pos1), self._game.camera.translate(self._pos2), self._width)
 
 class RainDrop(Thing):
     """
@@ -101,7 +102,7 @@ class RainDrop(Thing):
         self._startTime = pygame.time.get_ticks()
         self.destroy = False
         self._game._space.add(self._body,self._poly)
-        self.setPos(random.randint(0,400),0)
+        self.setPos(random.randint(0,self._game.windowSize[0]),0)
         self._body.apply_force_at_local_point((0,self._game._space.gravity[1]*1))
         self._poly.collision_type = 4
     def update(self):
@@ -116,7 +117,7 @@ class RainDrop(Thing):
 
     def draw(self):
         if self.visible:
-            pygame.draw.circle(self._game._screen,self.color,self._body.position,self.radius)
+            pygame.draw.circle(self._game._screen,self.color,self._game.camera.translate(self._body.position),self.radius)
     def delete(self):
         self._game._space.remove(self._body,self._poly)
 
@@ -179,8 +180,15 @@ class Player(Circle):
     """
     def __init__(self, game):
         super().__init__(game, 20, (255,0,0,1))
-        self.setPos(random.randint(0,400),0)
+        self.setPos(random.randint(0,self._game.windowSize[0]),0)
         self._poly.collision_type = 3
+
+    def moveLeft(self):
+        pass
+    def moveRight(self):
+        pass
+    def jump(self):
+        pass
 
 class Mouse(Thing):
     """
@@ -208,11 +216,13 @@ class RiseToFall(object):
         # create space
         self._space = pymunk.Space()
         self._space.gravity = 0,100
+        self.windowSize = (400,600)
 
         # initialize pygame
         pygame.init()
-        self._screen = pygame.display.set_mode((400,600))
+        self._screen = pygame.display.set_mode(self.windowSize, pygame.RESIZABLE)
         self._clock = pygame.time.Clock()
+
 
         # set caption
         pygame.display.set_caption("rise to fall")
@@ -227,9 +237,13 @@ class RiseToFall(object):
 
         self.rain = Rain(self)
 
-        self.camera = Camera()
+        self.camera = Camera(w=self.windowSize[0],h=self.windowSize[1])
 
         self._shapes.append(Mouse(self))
+
+        self.player = Player(self)
+        self._shapes.append(self.player)
+        self.camera.track(self.player)
 
         self.level = Level('testlevel.json',self)
         self.level.start()
@@ -263,6 +277,18 @@ class RiseToFall(object):
                 player = Player(self)
                 self._shapes.append(player)
                 self.camera.track(player)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_a and self.player:
+                self.player.moveLeft()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_d and self.player:
+                self.player.moveRight()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_w and self.player:
+                self.player.jump()
+            if event.type == pygame.VIDEORESIZE:
+                self._screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+                self.camera.h = event.h
+                self.camera.w = event.w
+                
+
 
     def _drawEntities(self):
         for shape in self._shapes:
