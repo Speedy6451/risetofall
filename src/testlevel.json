@@ -1,0 +1,55 @@
+{
+    "platforms": [
+        {
+            "pos1": [
+                200,
+                200
+            ],
+            "pos2": [
+                200,
+                350
+            ],
+            "width": 4,
+            "color": ""
+        },
+        {
+            "pos1": [
+                200,
+                350
+            ],
+            "pos2": [
+                300,
+                350
+            ],
+            "width": 4,
+            "color": ""
+        }
+    ],
+    "obstacles": [
+	    {
+		    "pos": [
+			    300,300
+		    ]
+	    }
+    ],
+    "playerSpawn": [200,400],
+    "checkpoints": [
+	    {
+		    "pos": [300,300],
+		    "size":[20,20]
+	    }
+    ],
+    "switches": [
+	    {
+		    "pos": [300,300],
+		    "rotation": 0
+	    }
+    ],
+    "text": [
+	    {
+		    "text": "a and d to move",
+		    "pos": [100,100],
+		    "size": 14
+	    }
+    ]
+}

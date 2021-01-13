@@ -1,6 +1,6 @@
 __docformat__ = "reStructuredText"
 
-import pymunk, pymunk.pygame_util, pygame, random
+import pymunk, pymunk.pygame_util, pygame, random, json
 
 class Camera(object):
     """
@@ -138,6 +138,23 @@ class Rain(object):
             else:
                 raindrop.draw()
 
+class Level(object):
+    """
+    Level class
+    Creates and destroys a level from a JSON file.
+    """
+    
+    def __init__(self, levelFilePath: str, game):
+        self._levelFilePath = levelFilePath
+        self._levelFile = open(self._levelFilePath, 'r')
+        self.level = json.load(self._levelFile)
+        self._game = game
+
+    def start(self):
+        for platform in self.level['platforms']:
+            self._game._shapes.append(Platform(self._game,platform['pos1'],platform['pos2'],platform['width'] or 4,platform['color'] or (0,0,0,1)))
+
+
 class RiseToFall(object):
     """
     riseToFall game class
@@ -167,6 +184,9 @@ class RiseToFall(object):
         self.rain = Rain(self)
 
         self.camera = Camera()
+
+        self.level = Level('testlevel.json',self)
+        self.level.start()
 
         # set draw options
         self._print_options = pymunk.pygame_util.DrawOptions(self._screen)
