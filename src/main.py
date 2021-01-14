@@ -12,6 +12,7 @@ class Camera(object):
         self.w = w
         self.h = h
         self.tracking = None
+        self.speed = 0.05
 
     def translate(self, pos):
         return (pos[0]-self.x,pos[1]-self.y)
@@ -31,8 +32,8 @@ class Camera(object):
             target = self.tracking.getPos()
             target = (target[0]-(self.w/2),target[1]-(self.h/2))
 
-            self.x += (target[0]-self.x)/2
-            self.y += (target[1]-self.y)/2
+            self.x += (target[0]-self.x)*self.speed
+            self.y += (target[1]-self.y)*self.speed
 
 class Thing(object):
     """
@@ -49,6 +50,9 @@ class Thing(object):
 
     def setPos(self, x,y):
         self._body.position = (x,y)
+
+    def setPosList(self, pos):
+        self._body.position = pos
 
     def getPos(self):
         return (self._body.position)
@@ -123,7 +127,6 @@ class RainDrop(Thing):
 
 class Rain(object):
     def rainCollisionHandler(self, arbiter, space, data):
-        print('thing')
         return False
 
     def __init__(self,game,maxDrops = 10,maxTime = 15000, dropRate=400):
@@ -163,15 +166,24 @@ class Level(object):
     Creates and destroys a level from a JSON file.
     """
     
+    def platformCollisionHandler(self, arbiter, space, data):
+        self._game.player.canJump = True
+        return True
+
     def __init__(self, levelFilePath: str, game):
         self._levelFilePath = levelFilePath
         self._levelFile = open(self._levelFilePath, 'r')
         self.level = json.load(self._levelFile)
         self._game = game
 
+        self.collisionHandler = game._space.add_collision_handler(3,5)
+        self.collisionHandler.begin = self.platformCollisionHandler
+
     def start(self):
         for platform in self.level['platforms']:
-            self._game._shapes.append(Platform(self._game,platform['pos1'],platform['pos2'],platform['width'] or 4,platform['color'] or (0,0,0,1)))
+            box = Platform(self._game,platform['pos1'],platform['pos2'],platform['width'] or 4,platform['color'] or (0,0,0,1))
+            box._poly.collision_type = 5
+            self._game._shapes.append(box)
 
 class Player(Circle):
     """
@@ -184,13 +196,20 @@ class Player(Circle):
         self._poly.collision_type = 3
         self.moveRight = False
         self.moveLeft = False
+        self.setPosList(self._game.level.level['playerSpawn'])
+        self.canJump = True
 
     def jump(self):
-        self._body.apply_force_at_local_point((0,-15000))
-        print('jump')
+        if self.canJump:
+            self._body.apply_force_at_local_point((0,-15000))
+            self.canJump = False
 
     def draw(self):
         super().draw()
+        print(self.getPos())
+        if self.getPos()[1] > 1500:
+            self.setPosList(self._game.level.level['playerSpawn'])
+            pass 
         if self.moveLeft:
             self._body.apply_force_at_local_point((-200,0))
         if self.moveRight:
@@ -210,7 +229,6 @@ class Mouse(Thing):
 
     def draw(self):
         mouse = pygame.mouse.get_pos()
-        print(mouse)
         self.setPos(mouse[0],mouse[1])
         pygame.draw.circle(self._game._screen,(0,0,0,1),self._body.position,6)
 
@@ -250,12 +268,12 @@ class RiseToFall(object):
 
         self._shapes.append(Mouse(self))
 
-        self.player = Player(self)
-        self._shapes.append(self.player)
-        self.camera.track(self.player)
 
         self.level = Level('levels/testlevel.json',self)
         self.level.start()
+        self.player = Player(self)
+        self._shapes.append(self.player)
+        self.camera.track(self.player)
 
         # set draw options
         self._print_options = pymunk.pygame_util.DrawOptions(self._screen)
