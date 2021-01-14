@@ -17,8 +17,8 @@ class Camera(object):
         return (pos[0]-self.x,pos[1]-self.y)
 
     def outOfBounds(self, pos):
-        if (pos[0] > self.w-self.x or pos[0] < 0-self.x
-                or pos[1] > self.h-self.y or pos[1] < 0-self.y):
+        if (pos[0]-self.y >self.h or pos[0]-self.y < 0 
+                or pos[1]-self.x >self.w or pos[1]-self.x < 0):
             return True
         else:
             return False
@@ -102,7 +102,7 @@ class RainDrop(Thing):
         self._startTime = pygame.time.get_ticks()
         self.destroy = False
         self._game._space.add(self._body,self._poly)
-        self.setPos(random.randint(0,self._game.windowSize[0]),0)
+        self._body.position = self._game.camera.translate((random.randint(0,self._game.windowSize[0]),0))
         self._body.apply_force_at_local_point((0,self._game._space.gravity[1]*1))
         self._poly.collision_type = 4
     def update(self):
@@ -179,16 +179,23 @@ class Player(Circle):
     implements the player that can move and jump
     """
     def __init__(self, game):
-        super().__init__(game, 20, (255,0,0,1))
+        super().__init__(game, 13, (255,0,0,1))
         self.setPos(random.randint(0,self._game.windowSize[0]),0)
         self._poly.collision_type = 3
+        self.moveRight = False
+        self.moveLeft = False
 
-    def moveLeft(self):
-        pass
-    def moveRight(self):
-        pass
     def jump(self):
-        pass
+        self._body.apply_force_at_local_point((0,-15000))
+        print('jump')
+
+    def draw(self):
+        super().draw()
+        if self.moveLeft:
+            self._body.apply_force_at_local_point((-200,0))
+        if self.moveRight:
+            self._body.apply_force_at_local_point((200,0))
+
 
 class Mouse(Thing):
     """
@@ -205,7 +212,7 @@ class Mouse(Thing):
         mouse = pygame.mouse.get_pos()
         print(mouse)
         self.setPos(mouse[0],mouse[1])
-        pygame.draw.circle(self._game._screen,(0,0,0,1),self._body.position,60)
+        pygame.draw.circle(self._game._screen,(0,0,0,1),self._body.position,6)
 
 class RiseToFall(object):
     """
@@ -215,7 +222,7 @@ class RiseToFall(object):
     def __init__(self) -> None:
         # create space
         self._space = pymunk.Space()
-        self._space.gravity = 0,100
+        self._space.gravity = 0,300
         self.windowSize = (400,600)
 
         # initialize pygame
@@ -235,9 +242,11 @@ class RiseToFall(object):
         self._shapes.append(box)
         # font = pygame.font.SysFont("Arial",16)
 
-        self.rain = Rain(self)
 
         self.camera = Camera(w=self.windowSize[0],h=self.windowSize[1])
+
+
+        self.rain = Rain(self)
 
         self._shapes.append(Mouse(self))
 
@@ -273,14 +282,14 @@ class RiseToFall(object):
                 self._shapes.append(shape)
                 self._space.gravity = (self._space.gravity[0]*-1,self._space.gravity[1]*-1)
                 self.rain.raining = not self.rain.raining
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
-                player = Player(self)
-                self._shapes.append(player)
-                self.camera.track(player)
             if event.type == pygame.KEYDOWN and event.key == pygame.K_a and self.player:
-                self.player.moveLeft()
+                self.player.moveLeft = True
             if event.type == pygame.KEYDOWN and event.key == pygame.K_d and self.player:
-                self.player.moveRight()
+                self.player.moveRight = True
+            if event.type == pygame.KEYUP and event.key == pygame.K_a and self.player:
+                self.player.moveLeft = False
+            if event.type == pygame.KEYUP and event.key == pygame.K_d and self.player:
+                self.player.moveRight = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_w and self.player:
                 self.player.jump()
             if event.type == pygame.VIDEORESIZE:
