@@ -254,7 +254,7 @@ class RiseToFall(object):
         self._shapes.append(self.player)
         self.camera.track(self.player)
 
-        self.level = Level('testlevel.json',self)
+        self.level = Level('levels/testlevel.json',self)
         self.level.start()
 
         # set draw options
