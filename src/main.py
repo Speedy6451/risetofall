@@ -14,7 +14,7 @@ class Camera(object):
         self.tracking = None
 
     def translate(self, pos):
-        return (pos[0]-self.x,pos[1]-self.y)
+        return (int(pos[0]-self.x),int(pos[1]-self.y))
 
     def outOfBounds(self, pos):
         if (pos[0]-self.y >self.h or pos[0]-self.y < 0 
@@ -212,7 +212,7 @@ class Mouse(Thing):
         mouse = pygame.mouse.get_pos()
         print(mouse)
         self.setPos(mouse[0],mouse[1])
-        pygame.draw.circle(self._game._screen,(0,0,0,1),self._body.position,6)
+        pygame.draw.circle(self._game._screen,(0,0,0,1),(int(self._body.position[0]),int(self._body.position[1])),6)
 
 class RiseToFall(object):
     """
