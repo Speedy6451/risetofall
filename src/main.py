@@ -18,7 +18,7 @@ class Camera(object):
         """
         This function translates the given coordinate to give a camera pan effect
         """
-        return (pos[0]-self.x,pos[1]-self.y)
+        return (int(pos[0]-self.x),int(pos[1]-self.y))
 
     def outOfBounds(self, pos):
         """
@@ -283,7 +283,7 @@ class Mouse(Thing):
         """
         mouse = pygame.mouse.get_pos() # get mouse position
         self.setPosList(mouse) # go to mouse
-        pygame.draw.circle(self._game._screen,(0,0,0,1),self._body.position,6) # draw black circle to represent mouse
+        pygame.draw.circle(self._game._screen,(0,0,0,1),(int(self._body.position[0]),int(self._body.position[1])),6)
 
 class RiseToFall(object):
     """
@@ -299,6 +299,8 @@ class RiseToFall(object):
         # initialize pygame
         pygame.init()
         self._screen = pygame.display.set_mode(self.windowSize, pygame.RESIZABLE) # set window size and enable resizing
+
+        self.clock = pygame.time.Clock()
 
         # set caption
         pygame.display.set_caption("rise to fall")
@@ -372,6 +374,7 @@ class RiseToFall(object):
             self._drawEntities() # draw entities
             pygame.display.flip() # write to screen
             self._space.step(0.02) # increment simulation
+            self.clock.tick(60)
         
 
 if __name__ == "__main__": # run game if called directly
