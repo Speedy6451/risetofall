@@ -85,6 +85,27 @@ class Thing(object):
         """
         pass
 
+class Text(object):
+    def __init__(self,game,text = 'test',posList = (0,0), color = (0,0,0,1)):
+        self._game = game
+        self.text = text
+        self.pos = posList
+        self.color = color
+        self.img = game.font.render(text,True,color)
+    def draw(self):
+        self._game._screen.blit(self.img,self._game.camera.translate(self.pos))
+
+class  Checkpoint(object):
+    def __init__(self,game, pos = (0,0)):
+        self._game = game
+        self.pos = pos
+    def draw(self):
+        playPos = self._game.player.getPos()
+        if playPos[0] > self.pos[0] and playPos[0] < self.pos[0] + 25 and playPos[1] > self.pos[1] and playPos[1] < self.pos[1] + 25:
+            print("checkpoint")
+            self._game.level.level['playerSpawn'] = self.pos
+        pygame.draw.rect(self._game._screen,(0,255,0,.5),pygame.Rect(self._game.camera.translate(self.pos),(25,25)))
+
 class Circle(Thing):
     """
     This class implements a pymunk circle that can be displayed on a pygame window
@@ -232,6 +253,13 @@ class Level(object):
             box = Platform(self._game,platform['pos1'],platform['pos2'],platform['width'] or 4,platform['color'] or (0,0,0,1)) # create platform object based on data
             box._poly.collision_type = 5 # specify as a platform collision type
             self._game._shapes.append(box) # add object to the game
+        for text in self.level['text']:
+            textObj = Text(self._game,text['text'],text['pos'],text['color'] or (0,0,0,1))
+            self._game._shapes.append(textObj)
+        for checkpoint in self.level['checkpoints']:
+            check = Checkpoint(self._game,checkpoint['pos'])
+            self._game._shapes.append(check)
+
 
 class Player(Circle):
     """
@@ -309,7 +337,7 @@ class RiseToFall(object):
 
         self._shapes = [] # list of objects
 
-        # font = pygame.font.SysFont("Arial",16) # font
+        self.font = pygame.font.SysFont("Arial.ttf",36) # font
 
 
         self.camera = Camera(w=self.windowSize[0],h=self.windowSize[1]) # initialize camera
@@ -320,12 +348,11 @@ class RiseToFall(object):
 
 
         # load and start the first level
-        self.level = Level('levels/testlevel.json',self)
+        self.level = Level('levels\\testlevel.json',self)
         self.level.start()
 
         # create player
         self.player = Player(self)
-        self._shapes.append(self.player)
         self.camera.track(self.player) 
 
     def _processEvents(self):
@@ -361,6 +388,7 @@ class RiseToFall(object):
         """
         for shape in self._shapes:
             shape.draw()
+        self.player.draw()
 
     def run(self):
         """

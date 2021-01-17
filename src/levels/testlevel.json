@@ -131,7 +131,68 @@
             ],
             "width": 4,
             "color": ""
+        },
+        {
+            "pos1": [
+                350,
+                1000
+            ],
+            "pos2": [
+                450,
+                1000
+            ],
+            "width": 4,
+            "color": ""
+        },
+        {
+            "pos1": [
+                750,
+                1000
+            ],
+            "pos2": [
+                650,
+                1000
+            ],
+            "width": 4,
+            "color": ""
+        },
+        {
+            "pos1": [
+                870,
+                900
+            ],
+            "pos2": [
+                900,
+                850
+            ],
+            "width": 4,
+            "color": ""
+        },
+        {
+            "pos1": [
+                1200,
+                850
+            ],
+            "pos2": [
+                1000,
+                850
+            ],
+            "width": 4,
+            "color": ""
+        },
+        {
+            "pos1": [
+                1350,
+                850
+            ],
+            "pos2": [
+                1900,
+                850
+            ],
+            "width": 4,
+            "color": ""
         }
+
     ],
     "obstacles": [
 	    {
@@ -143,21 +204,35 @@
     "playerSpawn": [200,400],
     "checkpoints": [
 	    {
-		    "pos": [300,300],
-		    "size":[20,20]
+		    "pos": [20,900]
 	    }
     ],
     "switches": [
 	    {
-		    "pos": [300,300],
-		    "rotation": 0
+		    "pos": [1150,800]
 	    }
     ],
     "text": [
 	    {
 		    "text": "a and d to move",
-		    "pos": [100,100],
-		    "size": 14
+		    "pos": [20,420],
+		    "color": ""
+	    },
+	    {
+		    "text" : "w to jump",
+		    "pos" : [380,420],
+		    "color" : ""
+	    },
+	    {
+		    "text" : "jump on box for checkpoint",
+		    "pos" : [50,900],
+		    "color" : ""
+	    },
+	    {
+		    "text" : "congratulations, you made it to the end",
+		    "pos" : [1350,800],
+		    "color" : ""
 	    }
+
     ]
 }
