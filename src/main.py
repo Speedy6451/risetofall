@@ -237,9 +237,7 @@ class Level(object):
         return True # make player collide
 
     def __init__(self, levelFilePath: str, game):
-        self._levelFilePath = levelFilePath # filepath to level json
-        self._levelFile = open(self._levelFilePath, 'r') # open level
-        self.level = json.load(self._levelFile) # load to python object
+        self.level = json.loads('{ "platforms": [ { "pos1": [ 200, 200 ], "pos2": [ 200, 350 ], "width": 4, "color": "" }, { "pos1": [ 100, 140 ], "pos2": [ 150, 160 ], "width": 4, "color": "" }, { "pos1": [ 350, 370 ], "pos2": [ 200, 350 ], "width": 4, "color": "" }, { "pos1": [ 200, 200 ], "pos2": [ 100, 200 ], "width": 4, "color": "" }, { "pos1": [ 100, 50 ], "pos2": [ 0, 100 ], "width": 4, "color": "" }, { "pos1": [ 0, 500 ], "pos2": [ 0, 100 ], "width": 4, "color": "" }, { "pos1": [ 0, 500 ], "pos2": [ 500, 500 ], "width": 4, "color": "" }, { "pos1": [ 500, 500 ], "pos2": [ 500, -100 ], "width": 4, "color": "" }, { "pos1": [ 0, -100 ], "pos2": [ 500, -100 ], "width": 4, "color": "" }, { "pos1": [ -150, 100 ], "pos2": [ -50, 1000 ], "width": 4, "color": "" }, { "pos1": [ 300, 1000 ], "pos2": [ -50, 1000 ], "width": 4, "color": "" }, { "pos1": [ 350, 1000 ], "pos2": [ 450, 1000 ], "width": 4, "color": "" }, { "pos1": [ 750, 1000 ], "pos2": [ 650, 1000 ], "width": 4, "color": "" }, { "pos1": [ 870, 900 ], "pos2": [ 900, 850 ], "width": 4, "color": "" }, { "pos1": [ 1200, 850 ], "pos2": [ 1000, 850 ], "width": 4, "color": "" }, { "pos1": [ 1350, 850 ], "pos2": [ 1900, 850 ], "width": 4, "color": "" } ], "obstacles": [ { "pos": [ 300,300 ] } ], "playerSpawn": [200,400], "checkpoints": [ { "pos": [20,900] } ], "switches": [ { "pos": [1150,800] } ], "text": [ { "text": "a and d to move", "pos": [20,420], "color": "" }, { "text" : "w to jump", "pos" : [380,420], "color" : "" }, { "text" : "jump on box for checkpoint", "pos" : [50,900], "color" : "" }, { "text" : "congratulations, you made it to the end", "pos" : [1350,800], "color" : "" } ] }')
         self._game = game # game object
 
         self.collisionHandler = game._space.add_collision_handler(3,5) # allow player to jump on collision
