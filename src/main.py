@@ -11,14 +11,20 @@ class Camera(object):
         self.y = y # cam y offset
         self.w = w # cam width
         self.h = h # cam height
+        self.upperLimit = None # max cam y
+        self.lowerLimit = None # min cam y
         self.tracking = None # tracking target
-        self.speed = 0.05 # tracking speed (get 5% closer to target every frame)
+        self.speed = 0.1 # tracking speed (get 5% closer to target every frame)
 
     def translate(self, pos):
         """
         This function translates the given coordinate to give a camera pan effect
         """
         return (int(pos[0]-self.x),int(pos[1]-self.y))
+
+    def setBounds(self, upperLimit, lowerLimit):
+        self.upperLimit = upperLimit
+        self.lowerLimit = lowerLimit
 
     def outOfBounds(self, pos):
         """
@@ -33,7 +39,7 @@ class Camera(object):
     def track(self, thing):
         """
         This function sets the tracking target
-        """
+r       """
         self.tracking = thing
 
     def update(self):
@@ -46,6 +52,12 @@ class Camera(object):
 
             self.x += (target[0]-self.x)*self.speed # pan toward target at given speed
             self.y += (target[1]-self.y)*self.speed
+
+            # constrain camera to limits TODO fix, is broken
+            if self.upperLimit:
+                self.y = min(self.upperLimit+(self.h/2), self.y)
+            if self.lowerLimit:
+                self.y = max(self.lowerLimit-(self.h/2), self.y)
 
 class Thing(object):
     """
@@ -110,11 +122,13 @@ class Circle(Thing):
     """
     This class implements a pymunk circle that can be displayed on a pygame window
     """
-    def __init__(self, game, radius = 80, color = pygame.Color(0,0,255,1), mass = 1, moment = 1666, bodyType = pymunk.Body.DYNAMIC) -> None:
+    def __init__(self, game, radius = 80, color = pygame.Color(0,0,255,1), mass = 1, moment = 1666, bodyType = pymunk.Body.DYNAMIC, friction = 0, elasticty = 0.05) -> None:
         super().__init__(game, mass=mass, moment=moment, bodyType=bodyType)
         self.radius = radius # circle radius
         self.color = color  # circle color
         self._poly = pymunk.Circle(self._body,radius) # physics shape
+        self._poly.friction = friction
+        self._poly.elasticty = elasticty
         self._game._space.add(self._body,self._poly) # add self to physics simulation
 
     def draw(self):
@@ -128,7 +142,7 @@ class Platform(Thing):
     """
     This class implements a static platform
     """
-    def __init__(self, game, pos1 = (20,40), pos2 = (40,40), width = 5, color = pygame.Color(0,0,0,1)) -> None:
+    def __init__(self, game, pos1 = (20,40), pos2 = (40,40), width = 5, color = pygame.Color(0,0,0,1, friction = .9, elasticty = 0.8)) -> None:
         super().__init__(game, bodyType=pymunk.Body.DYNAMIC)
         self._body = pymunk.Body(body_type=pymunk.Body.STATIC) # Creates static body (unmovable)
         self.color = color # line color
@@ -136,6 +150,8 @@ class Platform(Thing):
         self._pos2 = pos2 # line point 2
         self._width = width # line width
         self._poly = pymunk.Segment(self._body,pos1,pos2,width) # create physics shape
+        self._poly.friction = 0.6 #TODO figure out why this will not set from var
+        self._poly.elasticty = 0.0
         self._game._space.add(self._body,self._poly) # add self to simulation
 
     def draw(self):
@@ -237,7 +253,11 @@ class Level(object):
         return True # make player collide
 
     def __init__(self, levelFilePath: str, game):
-        self.level = json.loads('{ "platforms": [ { "pos1": [ 200, 200 ], "pos2": [ 200, 350 ], "width": 4, "color": "" }, { "pos1": [ 100, 140 ], "pos2": [ 150, 160 ], "width": 4, "color": "" }, { "pos1": [ 350, 370 ], "pos2": [ 200, 350 ], "width": 4, "color": "" }, { "pos1": [ 200, 200 ], "pos2": [ 100, 200 ], "width": 4, "color": "" }, { "pos1": [ 100, 50 ], "pos2": [ 0, 100 ], "width": 4, "color": "" }, { "pos1": [ 0, 500 ], "pos2": [ 0, 100 ], "width": 4, "color": "" }, { "pos1": [ 0, 500 ], "pos2": [ 500, 500 ], "width": 4, "color": "" }, { "pos1": [ 500, 500 ], "pos2": [ 500, -100 ], "width": 4, "color": "" }, { "pos1": [ 0, -100 ], "pos2": [ 500, -100 ], "width": 4, "color": "" }, { "pos1": [ -150, 100 ], "pos2": [ -50, 1000 ], "width": 4, "color": "" }, { "pos1": [ 300, 1000 ], "pos2": [ -50, 1000 ], "width": 4, "color": "" }, { "pos1": [ 350, 1000 ], "pos2": [ 450, 1000 ], "width": 4, "color": "" }, { "pos1": [ 750, 1000 ], "pos2": [ 650, 1000 ], "width": 4, "color": "" }, { "pos1": [ 870, 900 ], "pos2": [ 900, 850 ], "width": 4, "color": "" }, { "pos1": [ 1200, 850 ], "pos2": [ 1000, 850 ], "width": 4, "color": "" }, { "pos1": [ 1350, 850 ], "pos2": [ 1900, 850 ], "width": 4, "color": "" } ], "obstacles": [ { "pos": [ 300,300 ] } ], "playerSpawn": [200,400], "checkpoints": [ { "pos": [20,900] } ], "switches": [ { "pos": [1150,800] } ], "text": [ { "text": "a and d to move", "pos": [20,420], "color": "" }, { "text" : "w to jump", "pos" : [380,420], "color" : "" }, { "text" : "jump on box for checkpoint", "pos" : [50,900], "color" : "" }, { "text" : "congratulations, you made it to the end", "pos" : [1350,800], "color" : "" } ] }')
+        levelf = open(levelFilePath)
+        leveltxt = levelf.read()
+        levelf.close()
+        self.level = json.loads(leveltxt)
+        #self.level = json.loads('{ "platforms": [ { "pos1": [ 200, 200 ], "pos2": [ 200, 350 ], "width": 4, "color": "" }, { "pos1": [ 100, 140 ], "pos2": [ 150, 160 ], "width": 4, "color": "" }, { "pos1": [ 350, 370 ], "pos2": [ 200, 350 ], "width": 4, "color": "" }, { "pos1": [ 200, 200 ], "pos2": [ 100, 200 ], "width": 4, "color": "" }, { "pos1": [ 100, 50 ], "pos2": [ 0, 100 ], "width": 4, "color": "" }, { "pos1": [ 0, 500 ], "pos2": [ 0, 100 ], "width": 4, "color": "" }, { "pos1": [ 0, 500 ], "pos2": [ 500, 500 ], "width": 4, "color": "" }, { "pos1": [ 500, 500 ], "pos2": [ 500, -100 ], "width": 4, "color": "" }, { "pos1": [ 0, -100 ], "pos2": [ 500, -100 ], "width": 4, "color": "" }, { "pos1": [ -150, 100 ], "pos2": [ -50, 1000 ], "width": 4, "color": "" }, { "pos1": [ 300, 1000 ], "pos2": [ -50, 1000 ], "width": 4, "color": "" }, { "pos1": [ 350, 1000 ], "pos2": [ 450, 1000 ], "width": 4, "color": "" }, { "pos1": [ 750, 1000 ], "pos2": [ 650, 1000 ], "width": 4, "color": "" }, { "pos1": [ 870, 900 ], "pos2": [ 900, 850 ], "width": 4, "color": "" }, { "pos1": [ 1200, 850 ], "pos2": [ 1000, 850 ], "width": 4, "color": "" }, { "pos1": [ 1350, 850 ], "pos2": [ 1900, 850 ], "width": 4, "color": "" } ], "obstacles": [ { "pos": [ 300,300 ] } ], "playerSpawn": [200,400], "checkpoints": [ { "pos": [20,900] } ], "switches": [ { "pos": [1150,800] } ], "text": [ { "text": "a and d to move", "pos": [20,420], "color": "" }, { "text" : "w to jump", "pos" : [380,420], "color" : "" }, { "text" : "jump on box for checkpoint", "pos" : [50,900], "color" : "" }, { "text" : "congratulations, you made it to the end", "pos" : [1350,800], "color" : "" }], "upperLimit": 1500,"lowerLimit":-500 }')
         self._game = game # game object
 
         self.collisionHandler = game._space.add_collision_handler(3,5) # allow player to jump on collision
@@ -265,7 +285,7 @@ class Player(Circle):
     implements the player that can move and jump
     """
     def __init__(self, game):
-        super().__init__(game, 13, (255,0,0,1))
+        super().__init__(game, 13, (255,0,0,1), friction = .2, elasticty = 0.0)
         self._poly.collision_type = 3 # specify to collide as a player
         self.moveRight = False # is d pressed
         self.moveLeft = False # is a pressed 
@@ -277,7 +297,7 @@ class Player(Circle):
         This function makes the player jump if it can
         """
         if self.canJump: # if the player can jump
-            self._body.apply_force_at_local_point((0,-15000)) # shove the player up
+            self._body.apply_force_at_world_point((0,-15000), (self.getPos()[0],self.getPos()[1])) # shove the player up. uses world point to apply force in same direction regardless of direction
             self.canJump = False # the player can no longer jump
 
     def draw(self):
@@ -285,12 +305,13 @@ class Player(Circle):
         This function is called every frame and draws the player
         """
         super().draw()
-        if self.getPos()[1] > 1500 or self.getPos()[1]  < -500: # respawn the player if fallen out of map
+        if self.getPos()[1] > self._game.level.level['upperLimit'] or self.getPos()[1]  < self._game.level.level['lowerLimit']: # respawn the player if fallen out of map
+            self._body._set_velocity([0,0]) # zero player velocity
             self.setPosList(self._game.level.level['playerSpawn']) # go to spawnpoint
         if self.moveLeft: # is a pressed
-            self._body.apply_force_at_local_point((-200,0)) # shove player left
+            self._body.apply_force_at_world_point((-200,0), (self.getPos()[0],self.getPos()[1])) # shove player left
         if self.moveRight: # is d pressed
-            self._body.apply_force_at_local_point((200,0)) # shove player right
+            self._body.apply_force_at_world_point((200,0), (self.getPos()[0],self.getPos()[1])) # shove player right
 
 class Mouse(Thing):
     """
@@ -342,12 +363,13 @@ class RiseToFall(object):
 
         self.rain = Rain(self) # initialize rain
 
-        self._shapes.append(Mouse(self)) # initialize mouse
+        #self._shapes.append(Mouse(self)) # initialize mouse
 
 
         # load and start the first level
-        self.level = Level('levels\\testlevel.json',self)
+        self.level = Level('src/levels/testlevel.json',self)
         self.level.start()
+        self.camera.setBounds(self.level.level['upperLimit'],self.level.level['lowerLimit'])
 
         # create player
         self.player = Player(self)
@@ -396,7 +418,7 @@ class RiseToFall(object):
             self._processEvents() # process keyboard input
             self.camera.update() # make camera pan
             self._screen.fill(pygame.Color("white")) # clear screen
-            self.rain.update() # process rain
+            #self.rain.update() # process rain TODO: remove or fix
             self._drawEntities() # draw entities
             pygame.display.flip() # write to screen
             self._space.step(0.02) # increment simulation

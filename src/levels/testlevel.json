@@ -234,5 +234,7 @@
 		    "color" : ""
 	    }
 
-    ]
+    ],
+    "upperLimit": 1500,
+    "lowerLimit": -500
 }
